@@ -10,12 +10,15 @@ package com.goterl.lazysodium;
 
 import com.goterl.lazysodium.exceptions.SodiumException;
 import com.goterl.lazysodium.interfaces.*;
+import com.goterl.lazysodium.interfaces.Ristretto255.Checker;
+import com.goterl.lazysodium.interfaces.Ristretto255.RistrettoPoint;
 import com.goterl.lazysodium.utils.*;
 import com.sun.jna.NativeLong;
 import com.sun.jna.Pointer;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.ptr.PointerByReference;
 
+import java.math.BigInteger;
 import javax.crypto.AEADBadTagException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -39,7 +42,8 @@ public abstract class LazySodium implements
         SecretBox.Native, SecretBox.Lazy,
         KeyExchange.Native, KeyExchange.Lazy,
         KeyDerivation.Native, KeyDerivation.Lazy,
-        DiffieHellman.Native, DiffieHellman.Lazy {
+        DiffieHellman.Native, DiffieHellman.Lazy,
+        Ristretto255.Native, Ristretto255.Lazy {
 
     protected final Charset charset;
     protected final MessageEncoder messageEncoder;
@@ -2591,6 +2595,288 @@ public abstract class LazySodium implements
         }
     }
 
+
+    //// -------------------------------------------|
+    //// Ristretto255
+    //// -------------------------------------------|
+
+    @Override
+    public boolean cryptoCoreRistretto255IsValidPoint(byte[] point) {
+        return point.length == Ristretto255.RISTRETTO255_BYTES
+                   && getSodium().crypto_core_ristretto255_is_valid_point(point) == 1;
+    }
+
+    @Override
+    public void cryptoCoreRistretto255Random(byte[] point) {
+        Checker.ensurePointFits(point);
+
+        getSodium().crypto_core_ristretto255_random(point);
+    }
+
+    @Override
+    public boolean cryptoCoreRistretto255FromHash(byte[] point, byte[] hash) {
+        Checker.ensurePointFits(point);
+        Checker.checkHash(hash);
+
+        return successful(getSodium().crypto_core_ristretto255_from_hash(point, hash));
+    }
+
+    @Override
+    public boolean cryptoScalarmultRistretto255(byte[] result, byte[] n, byte[] point) {
+        Checker.ensurePointFits(result);
+        Checker.checkPoint(point);
+        Checker.checkScalar(n);
+
+        return successful(getSodium().crypto_scalarmult_ristretto255(result, n, point));
+    }
+
+    @Override
+    public boolean cryptoScalarmultRistretto255Base(byte[] result, byte[] n) {
+        Checker.ensurePointFits(result);
+        Checker.checkScalar(n);
+
+        return successful(getSodium().crypto_scalarmult_ristretto255_base(result, n));
+    }
+
+    @Override
+    public boolean cryptoCoreRistretto255Add(byte[] result, byte[] p, byte[] q) {
+        Checker.ensurePointFits(result);
+        Checker.checkPoint(p);
+        Checker.checkPoint(q);
+
+        return successful(getSodium().crypto_core_ristretto255_add(result, p, q));
+    }
+
+    @Override
+    public boolean cryptoCoreRistretto255Sub(byte[] result, byte[] p, byte[] q) {
+        Checker.ensurePointFits(result);
+        Checker.checkPoint(p);
+        Checker.checkPoint(q);
+
+        return successful(getSodium().crypto_core_ristretto255_sub(result, p, q));
+    }
+
+    @Override
+    public void cryptoCoreRistretto255ScalarRandom(byte[] scalar) {
+        Checker.ensureScalarFits(scalar);
+
+        getSodium().crypto_core_ristretto255_scalar_random(scalar);
+    }
+
+    @Override
+    public void cryptoCoreRistretto255ScalarReduce(byte[] result, byte[] scalar) {
+        Checker.ensureScalarFits(result);
+        Checker.checkNonReducedScalar(scalar);
+
+        getSodium().crypto_core_ristretto255_scalar_reduce(result, scalar);
+    }
+
+    @Override
+    public boolean cryptoCoreRistretto255ScalarInvert(byte[] result, byte[] scalar) {
+        Checker.ensureScalarFits(result);
+        Checker.checkScalar(scalar);
+
+        return successful(getSodium().crypto_core_ristretto255_scalar_invert(result, scalar));
+    }
+
+    @Override
+    public void cryptoCoreRistretto255ScalarNegate(byte[] result, byte[] scalar) {
+        Checker.ensureScalarFits(result);
+        Checker.checkScalar(scalar);
+
+        getSodium().crypto_core_ristretto255_scalar_negate(result, scalar);
+    }
+
+    @Override
+    public void cryptoCoreRistretto255ScalarComplement(byte[] result, byte[] scalar) {
+        Checker.ensureScalarFits(result);
+        Checker.checkScalar(scalar);
+
+        getSodium().crypto_core_ristretto255_scalar_complement(result, scalar);
+    }
+
+    @Override
+    public void cryptoCoreRistretto255ScalarAdd(byte[] result, byte[] x, byte[] y) {
+        Checker.ensureScalarFits(result);
+        Checker.checkScalar(x);
+        Checker.checkScalar(y);
+
+        getSodium().crypto_core_ristretto255_scalar_add(result, x, y);
+    }
+
+    @Override
+    public void cryptoCoreRistretto255ScalarSub(byte[] result, byte[] x, byte[] y) {
+        Checker.ensureScalarFits(result);
+        Checker.checkScalar(x);
+        Checker.checkScalar(y);
+
+        getSodium().crypto_core_ristretto255_scalar_sub(result, x, y);
+    }
+
+    @Override
+    public void cryptoCoreRistretto255ScalarMul(byte[] result, byte[] x, byte[] y) {
+        Checker.ensureScalarFits(result);
+        Checker.checkScalar(x);
+        Checker.checkScalar(y);
+
+        getSodium().crypto_core_ristretto255_scalar_mul(result, x, y);
+    }
+
+
+    // -- lazy
+
+    @Override
+    public boolean cryptoCoreRistretto255IsValidPoint(String point) {
+        if (point == null) {
+            throw new IllegalArgumentException("null arguments are invalid");
+        }
+
+        return cryptoCoreRistretto255IsValidPoint(toBin(point));
+    }
+
+    @Override
+    public RistrettoPoint cryptoCoreRistretto255Random() {
+        byte[] point = Ristretto255.pointBuffer();
+        cryptoCoreRistretto255Random(point);
+
+        return RistrettoPoint.fromBytes(this, point);
+    }
+
+
+    @Override
+    public RistrettoPoint cryptoCoreRistretto255FromHash(byte[] hash) throws SodiumException {
+        byte[] point = Ristretto255.pointBuffer();
+
+        if (!cryptoCoreRistretto255FromHash(point, hash)) {
+            throw new SodiumException("Conversion from hash to Ristretto point failed");
+        }
+
+        return RistrettoPoint.fromBytes(this, point);
+    }
+
+    @Override
+    public RistrettoPoint cryptoScalarmultRistretto255(byte[] n, RistrettoPoint point)
+        throws SodiumException {
+
+        byte[] result = Ristretto255.pointBuffer();
+
+        if (!cryptoScalarmultRistretto255(result, n, point.toBytes())) {
+            throw new SodiumException(
+                "Scalar multiplication failed. The resulting point was the identity element.");
+        }
+
+        return RistrettoPoint.fromBytes(this, result);
+    }
+
+    @Override
+    public RistrettoPoint cryptoScalarmultRistretto255Base(byte[] n) throws SodiumException {
+        byte[] result = Ristretto255.pointBuffer();
+
+        if (!cryptoScalarmultRistretto255Base(result, n)) {
+            throw new SodiumException(
+                "Scalar multiplication failed. n was 0.");
+        }
+
+        return RistrettoPoint.fromBytes(this, result);
+    }
+
+    @Override
+    public RistrettoPoint cryptoCoreRistretto255Add(RistrettoPoint p, RistrettoPoint q)
+        throws SodiumException {
+        if (p == null || q == null) {
+            throw new IllegalArgumentException("null arguments are invalid");
+        }
+
+        byte[] result = Ristretto255.pointBuffer();
+        if (!cryptoCoreRistretto255Add(result, p.toBytes(), q.toBytes())) {
+            throw new SodiumException("Either p or q was not a valid point.");
+        }
+
+        return RistrettoPoint.fromBytes(this, result);
+    }
+
+    @Override
+    public RistrettoPoint cryptoCoreRistretto255Sub(RistrettoPoint p, RistrettoPoint q)
+        throws SodiumException {
+
+        if (p == null || q == null) {
+            throw new IllegalArgumentException("null arguments are invalid");
+        }
+
+        byte[] result = Ristretto255.pointBuffer();
+        if (!cryptoCoreRistretto255Sub(result, p.toBytes(), q.toBytes())) {
+            throw new SodiumException("Either p or q was not a valid point.");
+        }
+
+        return RistrettoPoint.fromBytes(this, result);
+    }
+
+    @Override
+    public BigInteger cryptoCoreRistretto255ScalarRandom() {
+        byte[] scalar = Ristretto255.scalarBuffer();
+        cryptoCoreRistretto255ScalarRandom(scalar);
+
+        return Ristretto255.bytesToScalar(scalar);
+    }
+
+    @Override
+    public BigInteger cryptoCoreRistretto255ScalarReduce(byte[] scalar) {
+        byte[] result = Ristretto255.scalarBuffer();
+        cryptoCoreRistretto255ScalarReduce(result, scalar);
+
+        return Ristretto255.bytesToScalar(result);
+    }
+
+    @Override
+    public BigInteger cryptoCoreRistretto255ScalarInvert(byte[] scalar) throws SodiumException {
+        byte[] result = Ristretto255.scalarBuffer();
+
+        if (!cryptoCoreRistretto255ScalarInvert(result, scalar)) {
+            throw new SodiumException("Scalar inversion failed. Did you pass 0?");
+        }
+
+        return Ristretto255.bytesToScalar(result);
+    }
+
+    @Override
+    public BigInteger cryptoCoreRistretto255ScalarNegate(byte[] scalar) {
+        byte[] result = Ristretto255.scalarBuffer();
+        cryptoCoreRistretto255ScalarNegate(result, scalar);
+
+        return Ristretto255.bytesToScalar(result);
+    }
+
+    @Override
+    public BigInteger cryptoCoreRistretto255ScalarComplement(byte[] scalar) {
+        byte[] result = Ristretto255.scalarBuffer();
+        cryptoCoreRistretto255ScalarComplement(result, scalar);
+
+        return Ristretto255.bytesToScalar(result);
+    }
+
+    @Override
+    public BigInteger cryptoCoreRistretto255ScalarAdd(byte[] x, byte[] y) {
+        byte[] result = Ristretto255.scalarBuffer();
+        cryptoCoreRistretto255ScalarAdd(result, x, y);
+
+        return Ristretto255.bytesToScalar(result);
+    }
+
+    @Override
+    public BigInteger cryptoCoreRistretto255ScalarSub(byte[] x, byte[] y) {
+        byte[] result = Ristretto255.scalarBuffer();
+        cryptoCoreRistretto255ScalarSub(result, x, y);
+
+        return Ristretto255.bytesToScalar(result);
+    }
+
+    @Override
+    public BigInteger cryptoCoreRistretto255ScalarMul(byte[] x, byte[] y) {
+        byte[] result = Ristretto255.scalarBuffer();
+        cryptoCoreRistretto255ScalarMul(result, x, y);
+
+        return Ristretto255.bytesToScalar(result);
+    }
 
     //// -------------------------------------------|
     //// CONVENIENCE

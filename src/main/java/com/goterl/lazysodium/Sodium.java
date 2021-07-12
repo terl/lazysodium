@@ -1015,4 +1015,36 @@ public class Sodium {
 
     public native int crypto_aead_aes256gcm_is_available();
 
+
+    // Ristretto255
+
+    public native int crypto_core_ristretto255_is_valid_point(byte[] p);
+
+    public native void crypto_core_ristretto255_random(byte[] p);
+
+    public native int crypto_core_ristretto255_from_hash(byte[] p, byte[] r);
+
+    public native int crypto_scalarmult_ristretto255(byte[] q, byte[] n, byte[] p);
+
+    public native int crypto_scalarmult_ristretto255_base(byte[] q, byte[] n);
+
+    public native int crypto_core_ristretto255_add(byte[] r, byte[] p, byte[] q);
+
+    public native int crypto_core_ristretto255_sub(byte[] r, byte[] p, byte[] q);
+
+    public native void crypto_core_ristretto255_scalar_random(byte[] r);
+
+    public native void crypto_core_ristretto255_scalar_reduce(byte[] r, byte[] s);
+
+    public native int crypto_core_ristretto255_scalar_invert(byte[] recip, byte[] s);
+
+    public native void crypto_core_ristretto255_scalar_negate(byte[] neg, byte[] s);
+
+    public native void crypto_core_ristretto255_scalar_complement(byte[] comp, byte[] s);
+
+    public native void crypto_core_ristretto255_scalar_add(byte[] z, byte[] x, byte[] y);
+
+    public native void crypto_core_ristretto255_scalar_sub(byte[] z, byte[] x, byte[] y);
+
+    public native void crypto_core_ristretto255_scalar_mul(byte[] z, byte[] x, byte[] y);
 }
